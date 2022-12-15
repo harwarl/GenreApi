@@ -22,12 +22,9 @@ app.get('/api/genres', (req, res, next)=>{
 });
 
 app.post('/api/genres', (req, res, next)=>{
-    const schema = {
-        genreType: Joi.string().min(2).required()
-    };
-    const result = Joi.validate(req.body, schema);
-    if(result.error){
-        res.status(400).send(result.error);
+    const { error } = validateGenre(req.body);
+    if(error){
+        res.status(400).send(error.details[0].message);
         return;
     };
     const genre = {
@@ -38,3 +35,27 @@ app.post('/api/genres', (req, res, next)=>{
     genres.push(genre);
     res.send(genres);
 })
+
+app.put('/api/genres/:id', (req, res, next)=>{
+    //find genre
+    const genre = genres.find(g => g.id === parseInt(req.params.id));
+    if(!genre) res.status(404).send("The inputted ID was not found");
+
+    //validate genre
+    const { error } = validateGenre(req.body);
+    if(error){
+        res.status(400).send(error.details[0].message);
+        return;
+    };
+
+    //update genre
+    genre.genreType = req.body.genreType;
+    res.send(genres);
+})
+
+function validateGenre(genre){
+    const schema = {
+        genreType: Joi.string().min(3).required()
+    };
+    return Joi.validate(genre, schema);
+}
