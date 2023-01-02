@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Customer = require('../model/customer');
+const Customer = require('../model/genre').Customer;
 const Joi = require('joi');
 
 router.get('/', async(req, res, next)=>{
