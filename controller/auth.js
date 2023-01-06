@@ -1,33 +1,35 @@
 const express = require('express');
 const router = express.Router();
-const _ = require('lodash');
+const bcrypt = require('bcrypt');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const config = require('config');  
 const User = require('../model/user').User;
 
 router.post('/', async(req, res, next)=>{
     const { error } = validate(req.body);
-    if (error) return res.status(400).json({'status': true, 'message': error.details[0].message});
+    if(error) return res.status(400).json({'status': true, 'message': error.details[0].message});
+    const { email } = req.body;
 
-    let user = await User.findOne({email: req.body.email});
-    if(!user) return res.status(400).json({'status': true, 'message': 'Invalid Email or Password'});
+    const user = await User.findOne({email: email});
+    if(!user) return res.status(400).json({'status': true, 'message': 'Email or password invalid'});
 
     const validPassword = await bcrypt.compare(req.body.password, user.password);
-    if(!validPassword) return res.status(400).json({'status': true, 'message': 'Invalid Password'});
+    if(!validPassword) return res.status(400).json({'status': true, 'message': 'Password invalid'});
 
-    const token = jwt.sign({_id: user._id}, process.env.PRIVATEKEY);
+    //create a token when a user has signed in.
+    console.log(user);
+    const token = user.generateAuthToken();
+    console.log(token);
 
-    res.status(200).json({'status': true, 'message': token});
-});
+    return res.status(200).json({'status': true, 'message': token});
+})
 
-function validate(request){
+function validate(req){
     const schema = Joi.object({
-        email: Joi.string().email().min(10).max(255).required(),
+        email : Joi.string().email().required(),
         password: Joi.string().min(8).max(255).required()
     });
-    return schema.validate(request);
+    return schema.validate(req);
 }
 
 module.exports = router;
